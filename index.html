@@ -35,7 +35,33 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Babel Standalone cargará y transpilará index.tsx y sus dependencias -->
-    <script type="text/babel" data-presets="typescript,react" src="./index.tsx"></script>
+    <!-- Cargador manual para evitar errores de MIME type en archivos .tsx -->
+    <script type="text/babel" data-presets="typescript,react">
+      // Cargamos el punto de entrada index.tsx mediante fetch para evitar el error de MIME type
+      (async () => {
+        try {
+          const response = await fetch('./index.tsx');
+          const code = await response.text();
+          // Babel transformará el código y lo ejecutará
+          const transformed = Babel.transform(code, {
+            presets: ['typescript', 'react'],
+            filename: 'index.tsx'
+          }).code;
+          
+          const script = document.createElement('script');
+          script.type = 'module';
+          script.text = transformed;
+          document.head.appendChild(script);
+        } catch (e) {
+          console.error("Error al cargar la aplicación:", e);
+          document.getElementById('root').innerHTML = `
+            <div style="padding: 2rem; text-align: center; color: #ef4444;">
+              <h2>Error de carga</h2>
+              <p>No se pudo iniciar la aplicación. Revise la consola para más detalles.</p>
+            </div>
+          `;
+        }
+      })();
+    </script>
   </body>
 </html>
