@@ -37,9 +37,8 @@
     <div id="root"></div>
     <script type="module">
       /**
-       * Cargador de Módulos No-Build para Tamer Industrial
-       * Intercepta importaciones locales, las transpila recursivamente
-       * y utiliza URLs de Blob para asegurar la compatibilidad con GitHub Pages.
+       * Cargador de Módulos No-Build (V3)
+       * Resuelve el error de MIME type transformando archivos locales en Blob URLs.
        */
       const moduleCache = new Map();
 
@@ -47,24 +46,30 @@
         const absoluteUrl = new URL(url, window.location.href).href;
         if (moduleCache.has(absoluteUrl)) return moduleCache.get(absoluteUrl);
 
-        // Prevenimos bucles infinitos por circularidad
+        // Placeholder para evitar recursión infinita
         let resolvePromise;
         const promise = new Promise(r => { resolvePromise = r; });
         moduleCache.set(absoluteUrl, promise);
 
         try {
           const response = await fetch(absoluteUrl);
-          if (!response.ok) throw new Error(`HTTP ${response.status} al cargar ${absoluteUrl}`);
+          if (!response.ok) throw new Error(`HTTP ${response.status} en ${absoluteUrl}`);
           let source = await response.text();
 
-          // Buscar importaciones/exportaciones locales
+          // Regex mejorada para detectar imports locales con o sin extensión
           const relImportRegex = /(import|export)(\s+[\w*\s{},]+\s+from\s+|\s+)(['"])(\.\.?\/[^'"]+)\3/g;
-          const matches = Array.from(source.matchAll(relImportRegex));
           
-          // Reemplazamos cada importación relativa por una URL de Blob procesada
+          // Procesamiento secuencial de dependencias
+          const matches = Array.from(source.matchAll(relImportRegex));
           for (const match of matches) {
             const [fullMatch, type, space, quote, relPath] = match;
-            const depUrl = new URL(relPath, absoluteUrl).href;
+            // Aseguramos que la ruta tenga extensión para el fetch
+            let normalizedRelPath = relPath;
+            if (!relPath.endsWith('.ts') && !relPath.endsWith('.tsx') && !relPath.endsWith('.js')) {
+               normalizedRelPath += (relPath.includes('view') || relPath.includes('App') || relPath.includes('index') || relPath.includes('Module') || relPath.includes('Layout') || relPath.includes('constant')) ? '.tsx' : '.ts';
+            }
+            
+            const depUrl = new URL(normalizedRelPath, absoluteUrl).href;
             const blobUrl = await resolveAndTranspile(depUrl);
             source = source.replace(fullMatch, `${type}${space}${quote}${blobUrl}${quote}`);
           }
@@ -79,7 +84,7 @@
           resolvePromise(finalUrl);
           return finalUrl;
         } catch (err) {
-          console.error(`Error procesando módulo ${absoluteUrl}:`, err);
+          console.error(`Error en módulo ${absoluteUrl}:`, err);
           throw err;
         }
       }
@@ -88,16 +93,20 @@
         try {
           const entryPoint = './index.tsx';
           const blobUrl = await resolveAndTranspile(entryPoint);
-          
           const script = document.createElement('script');
           script.type = 'module';
           script.src = blobUrl;
           document.head.appendChild(script);
         } catch (e) {
           document.getElementById('root').innerHTML = `
-            <div style="padding: 2rem; text-align: center; color: #ef4444; background: #1e293b; border-radius: 1rem; border: 1px solid #ef444455; margin: 2rem; font-family: sans-serif;">
-              <h2 style="margin-bottom: 0.5rem; font-weight: 800;">ERROR DE INICIALIZACIÓN</h2>
-              <p style="font-size: 0.8rem; opacity: 0.7; font-family: monospace;">${e.message}</p>
+            <div style="padding: 3rem; text-align: center; background: #0f172a; min-height: 100vh; color: #f8fafc; font-family: 'Inter', sans-serif;">
+              <div style="max-width: 500px; margin: 0 auto; background: #1e293b; padding: 2.5rem; border-radius: 2rem; border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+                <div style="background: #ef4444; width: 60px; height: 60px; border-radius: 1.2rem; display: flex; items-center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 1.5rem; font-weight: 900;">!</div>
+                <h2 style="font-weight: 900; letter-spacing: -0.05em; margin-bottom: 1rem; font-size: 1.5rem; color: #ef4444;">ERROR DE SISTEMA</h2>
+                <p style="font-size: 0.875rem; color: #94a3b8; line-height: 1.6; margin-bottom: 2rem;">No se pudo inicializar el núcleo del ERP. Esto suele deberse a restricciones del servidor o falta de archivos.</p>
+                <code style="display: block; background: #0f172a; padding: 1rem; border-radius: 1rem; font-size: 0.7rem; color: #64748b; word-break: break-all; text-align: left;">${e.message}</code>
+                <button onclick="window.location.reload()" style="margin-top: 2rem; background: #3b82f6; color: white; border: none; padding: 0.75rem 2rem; border-radius: 0.75rem; font-weight: 700; cursor: pointer;">Reintentar</button>
+              </div>
             </div>
           `;
         }
