@@ -1,17 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { User, UserRole } from './types';
-import LoginView from './views/LoginView';
-import Layout from './components/Layout';
-import Dashboard from './views/Dashboard';
-import AutomatizacionView from './views/AutomatizacionView';
-import PlaneamientoView from './views/PlaneamientoView';
-import TallerView from './views/TallerView';
-import UsuariosView from './views/UsuariosView';
-import TecnicaView from './views/TecnicaView';
-import ComprasView from './views/ComprasView';
-import AdminBitacoraView from './views/AdminBitacoraView';
+import { User, UserRole } from './types.ts';
+import LoginView from './views/LoginView.tsx';
+import Layout from './components/Layout.tsx';
+import Dashboard from './views/Dashboard.tsx';
+import AutomatizacionView from './views/AutomatizacionView.tsx';
+import PlaneamientoView from './views/PlaneamientoView.tsx';
+import TallerView from './views/TallerView.tsx';
+import UsuariosView from './views/UsuariosView.tsx';
+import TecnicaView from './views/TecnicaView.tsx';
+import ComprasView from './views/ComprasView.tsx';
+import AdminBitacoraView from './views/AdminBitacoraView.tsx';
 
 const RoleGuard: React.FC<{ user: User, allowedRoles: UserRole[], children: React.ReactNode }> = ({ user, allowedRoles, children }) => {
   if (user.role === UserRole.ADMIN || allowedRoles.includes(user.role)) {
