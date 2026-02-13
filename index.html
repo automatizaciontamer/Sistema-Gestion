@@ -35,29 +35,69 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Cargador manual para evitar errores de MIME type en archivos .tsx -->
-    <script type="text/babel" data-presets="typescript,react">
-      // Cargamos el punto de entrada index.tsx mediante fetch para evitar el error de MIME type
+    <script type="module">
+      /**
+       * Cargador de Módulos No-Build para Tamer Industrial
+       * Intercepta importaciones locales, las transpila recursivamente
+       * y utiliza URLs de Blob para asegurar la compatibilidad con GitHub Pages.
+       */
+      const moduleCache = new Map();
+
+      async function resolveAndTranspile(url) {
+        const absoluteUrl = new URL(url, window.location.href).href;
+        if (moduleCache.has(absoluteUrl)) return moduleCache.get(absoluteUrl);
+
+        // Prevenimos bucles infinitos por circularidad
+        let resolvePromise;
+        const promise = new Promise(r => { resolvePromise = r; });
+        moduleCache.set(absoluteUrl, promise);
+
+        try {
+          const response = await fetch(absoluteUrl);
+          if (!response.ok) throw new Error(`HTTP ${response.status} al cargar ${absoluteUrl}`);
+          let source = await response.text();
+
+          // Buscar importaciones/exportaciones locales
+          const relImportRegex = /(import|export)(\s+[\w*\s{},]+\s+from\s+|\s+)(['"])(\.\.?\/[^'"]+)\3/g;
+          const matches = Array.from(source.matchAll(relImportRegex));
+          
+          // Reemplazamos cada importación relativa por una URL de Blob procesada
+          for (const match of matches) {
+            const [fullMatch, type, space, quote, relPath] = match;
+            const depUrl = new URL(relPath, absoluteUrl).href;
+            const blobUrl = await resolveAndTranspile(depUrl);
+            source = source.replace(fullMatch, `${type}${space}${quote}${blobUrl}${quote}`);
+          }
+
+          const transpiled = Babel.transform(source, {
+            presets: ['typescript', 'react'],
+            filename: absoluteUrl,
+          }).code;
+
+          const blob = new Blob([transpiled], { type: 'application/javascript' });
+          const finalUrl = URL.createObjectURL(blob);
+          resolvePromise(finalUrl);
+          return finalUrl;
+        } catch (err) {
+          console.error(`Error procesando módulo ${absoluteUrl}:`, err);
+          throw err;
+        }
+      }
+
       (async () => {
         try {
-          const response = await fetch('./index.tsx');
-          const code = await response.text();
-          // Babel transformará el código y lo ejecutará
-          const transformed = Babel.transform(code, {
-            presets: ['typescript', 'react'],
-            filename: 'index.tsx'
-          }).code;
+          const entryPoint = './index.tsx';
+          const blobUrl = await resolveAndTranspile(entryPoint);
           
           const script = document.createElement('script');
           script.type = 'module';
-          script.text = transformed;
+          script.src = blobUrl;
           document.head.appendChild(script);
         } catch (e) {
-          console.error("Error al cargar la aplicación:", e);
           document.getElementById('root').innerHTML = `
-            <div style="padding: 2rem; text-align: center; color: #ef4444;">
-              <h2>Error de carga</h2>
-              <p>No se pudo iniciar la aplicación. Revise la consola para más detalles.</p>
+            <div style="padding: 2rem; text-align: center; color: #ef4444; background: #1e293b; border-radius: 1rem; border: 1px solid #ef444455; margin: 2rem; font-family: sans-serif;">
+              <h2 style="margin-bottom: 0.5rem; font-weight: 800;">ERROR DE INICIALIZACIÓN</h2>
+              <p style="font-size: 0.8rem; opacity: 0.7; font-family: monospace;">${e.message}</p>
             </div>
           `;
         }
