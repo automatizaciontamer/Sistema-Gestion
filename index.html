@@ -4,15 +4,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tamer Industrial S.A.</title>
+    <title>Tamer Industrial S.A. - Gestión ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
       body {
         font-family: 'Inter', sans-serif;
         background-color: #0f172a;
         color: #f8fafc;
       }
+      /* Custom scrollbar for industrial feel */
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: #0f172a; }
+      ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
     <script type="importmap">
     {
@@ -30,7 +36,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Punto de entrada de la aplicación -->
-    <script type="module" src="./index.tsx"></script>
+    <!-- Babel se encarga de cargar y transpilar el archivo .tsx para compatibilidad en GitHub Pages -->
+    <script type="text/babel" data-type="module" src="./index.tsx"></script>
   </body>
 </html>
