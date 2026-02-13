@@ -11,7 +11,7 @@ import {
   Users,
   ShieldCheck
 } from 'lucide-react';
-import { UserRole } from './types';
+import { UserRole } from './types.ts';
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.ADMIN]: 'Administrador',
