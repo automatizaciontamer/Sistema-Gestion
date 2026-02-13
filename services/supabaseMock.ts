@@ -1,6 +1,6 @@
 
-import { User, UserRole, Quotation, QuoteStatus, Cliente, OrdFabricacion, OrdTrabajo, Material, AuditEntry, AppNotification, WorkTracking } from '../types';
-import { supabaseClient } from '../supabaseConfig';
+import { User, UserRole, Quotation, QuoteStatus, Cliente, OrdFabricacion, OrdTrabajo, Material, AuditEntry, AppNotification, WorkTracking } from '../types.ts';
+import { supabaseClient } from '../supabaseConfig.ts';
 
 class SupabaseService {
   private listeners: Function[] = [];
