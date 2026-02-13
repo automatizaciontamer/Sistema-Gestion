@@ -11,7 +11,8 @@ import {
   Activity,
   UserCheck,
   FileText,
-  Clock
+  Clock,
+  ArrowRight
 } from 'lucide-react';
 import { ROLE_LABELS } from '../constants.tsx';
 
@@ -40,7 +41,7 @@ const AdminBitacoraView: React.FC<Props> = ({ user }) => {
 
   const getReadStats = (wt: WorkTracking) => {
     const totalLogs = wt.logs.length;
-    const totalRequiredReadings = totalLogs * 7; 
+    const totalRequiredReadings = totalLogs * 7; // 7 sectores
     const actualReadings = wt.logs.reduce((acc, log) => acc + (log.readBy?.length || 0), 0);
     const percentage = totalRequiredReadings > 0 ? (actualReadings / totalRequiredReadings) * 100 : 0;
     return { totalLogs, actualReadings, percentage };
@@ -61,7 +62,7 @@ const AdminBitacoraView: React.FC<Props> = ({ user }) => {
           <div>
             <h2 className="text-4xl font-black uppercase tracking-tighter">Auditoría Maestra</h2>
             <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] mt-1 flex items-center gap-2">
-              <Activity size={14} className="text-emerald-500" /> Trazabilidad de Lectura por Usuario y Sector
+              <Activity size={14} className="text-emerald-500" /> Control de Lectura Sectorial Tamer S.A.
             </p>
           </div>
         </div>
@@ -72,7 +73,7 @@ const AdminBitacoraView: React.FC<Props> = ({ user }) => {
               <p className="text-2xl font-black text-white">{trackings.length}</p>
            </div>
            <div className="text-center">
-              <p className="text-[10px] text-slate-500 font-black uppercase mb-1">Lecturas</p>
+              <p className="text-[10px] text-slate-500 font-black uppercase mb-1">Confirmaciones</p>
               <p className="text-2xl font-black text-blue-500">
                 {trackings.reduce((acc, wt) => acc + wt.logs.reduce((lacc, log) => lacc + (log.readBy?.length || 0), 0), 0)}
               </p>
@@ -84,7 +85,7 @@ const AdminBitacoraView: React.FC<Props> = ({ user }) => {
         <Search className="absolute left-6 top-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={24} />
         <input 
           type="text" 
-          placeholder="Rastrear OT, OF o descripción..."
+          placeholder="Rastrear OT, OF o descripción de trabajo..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-slate-900/80 border border-slate-800 rounded-[2rem] pl-16 pr-8 py-5 text-lg text-white font-medium focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-xl placeholder:text-slate-700"
@@ -116,7 +117,7 @@ const AdminBitacoraView: React.FC<Props> = ({ user }) => {
 
                 <div className="w-full md:w-64 flex flex-col gap-2">
                   <div className="flex justify-between text-[9px] font-black uppercase">
-                    <span className="text-slate-500">Validación Global</span>
+                    <span className="text-slate-500">Estado de Validación</span>
                     <span className={stats.percentage === 100 ? 'text-emerald-500' : 'text-blue-500'}>{Math.round(stats.percentage)}%</span>
                   </div>
                   <div className="h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner p-0.5">
@@ -136,7 +137,7 @@ const AdminBitacoraView: React.FC<Props> = ({ user }) => {
                 <div className="p-8 bg-slate-950/60 border-t border-slate-800 space-y-8 animate-in slide-in-from-top-4 duration-300">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                     <h5 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] flex items-center gap-3">
-                      <FileText size={16} /> Registro de Firmas Digitales
+                      <FileText size={16} /> Registro Técnico de Bitácora
                     </h5>
                   </div>
                   
@@ -183,7 +184,7 @@ const AdminBitacoraView: React.FC<Props> = ({ user }) => {
                           <details className="group/readers">
                             <summary className="list-none cursor-pointer flex items-center gap-3 text-[10px] font-black text-blue-400 uppercase hover:text-blue-300 transition-colors tracking-widest">
                                <UserCheck size={18} />
-                               Historial Detallado ({log.readBy?.length || 0})
+                               Trazabilidad de Lectores ({log.readBy?.length || 0})
                                <ChevronDown size={14} className="group-open/readers:rotate-180 transition-transform ml-auto" />
                             </summary>
                             
@@ -196,11 +197,14 @@ const AdminBitacoraView: React.FC<Props> = ({ user }) => {
                                   <div className="flex-1 min-w-0">
                                     <p className="text-[11px] font-black text-slate-100 uppercase truncate">{reader.userName}</p>
                                     <div className="flex flex-col gap-1 mt-1">
-                                       <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md w-fit border ${
-                                          reader.role === UserRole.ADMIN ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                       }`}>
-                                          {ROLE_LABELS[reader.role as UserRole]}
-                                       </span>
+                                       <div className="flex items-center gap-2">
+                                          <span className="text-[8px] font-black uppercase text-blue-500">Sector:</span>
+                                          <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-md w-fit border ${
+                                              reader.role === UserRole.ADMIN ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                          }`}>
+                                              {ROLE_LABELS[reader.role as UserRole]}
+                                          </span>
+                                       </div>
                                        <div className="flex items-center gap-1.5 text-slate-600 text-[9px] font-mono">
                                           <Clock size={10} />
                                           {new Date(reader.timestamp).toLocaleString()}
